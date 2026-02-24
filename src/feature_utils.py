@@ -50,20 +50,29 @@ def extract_features():
     return features
 
 
-def get_bitcoin_historical_prices(days = 60):
-    
-    BASE_URL = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
-    
-    params = {
-        'vs_currency': 'usd',
-        'days': days,
-        'interval': 'daily' # Ensure we get daily granularity
-    }
-    response = requests.get(BASE_URL, params=params)
-    data = response.json()
-    prices = data['prices']
-    df = pd.DataFrame(prices, columns=['Timestamp', 'Close Price (USD)'])
-    df['Date'] = pd.to_datetime(df['Timestamp'], unit='ms').dt.normalize()
-    df = df[['Date', 'Close Price (USD)']].set_index('Date')
-    return df
+###
 
+import requests
+import pandas as pd
+
+def get_bitcoin_historical_prices(days=60):
+    url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
+    params = {"vs_currency": "usd", "days": days, "interval": "daily"}
+
+    r = requests.get(url, params=params, timeout=20)
+
+    # If the HTTP call failed, raise a clear error
+    if r.status_code != 200:
+        raise RuntimeError(f"CoinGecko error {r.status_code}: {r.text[:300]}")
+
+    data = r.json()
+
+    # If the JSON isn't the expected format, raise a clear error
+    if "prices" not in data:
+        raise RuntimeError(f"Unexpected CoinGecko response keys: {list(data.keys())}. "
+                           f"Response sample: {str(data)[:300]}")
+
+    df = pd.DataFrame(data["prices"], columns=["Timestamp", "Price_USD"])
+    df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms").dt.normalize()
+    df = df.drop(columns=["Timestamp"]).set_index("Date")
+    return df
