@@ -50,7 +50,7 @@ def extract_features():
     return features
 
 
-###
+### Check original file for what was deleted
 
 import requests
 import pandas as pd
@@ -76,3 +76,4 @@ def get_bitcoin_historical_prices(days=60):
     df["Date"] = pd.to_datetime(df["Timestamp"], unit="ms").dt.normalize()
     df = df.drop(columns=["Timestamp"]).set_index("Date")
     return df
+
